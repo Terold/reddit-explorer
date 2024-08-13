@@ -7,6 +7,7 @@ import { GetSubredditNamesResponse } from "../types/api/responses/GetSubredditNa
 import { RedditClientConfiguration } from "../config/RedditClientConfiguration"
 import { AccessTokenResponse } from "../types/api/responses/AccessTokenResponse"
 import { GetSubredditArgs } from "../types/api/requests/GetSubredditArgs"
+import { GetPostArgs } from "../types/api/requests/GetPostArgs"
 import { GetSubredditResponse } from "../types/api/responses/GetSubredditResponse"
 import { filterPosts } from "./filterPosts"
 import { validateConfig } from "../config/configValidator"
@@ -76,6 +77,19 @@ export const createRedditClient = (config: RedditClientConfiguration) => {
         return filterPosts(response.data, postFilters)
     }
 
+    const getUserMulti = async <TGetSubredditArgs extends GetSubredditArgs>(
+      args: TGetSubredditArgs
+  ): Promise<GetSubredditResponse<TGetSubredditArgs>> => {
+      const { name, sortMethod, ...restParams } = args
+
+
+      const response = await api.get<GetSubredditResponse<TGetSubredditArgs>>(`/${name}/${sortMethod}`, {
+          params: { limit, ...restParams },
+      })
+
+      return filterPosts(response.data, postFilters)
+  }
+
     async function* getSubredditIterator<TGetSubredditArgs extends GetSubredditArgs>(
         args: TGetSubredditArgs
     ): AsyncIterator<GetSubredditResponse<TGetSubredditArgs>> {
@@ -112,12 +126,26 @@ export const createRedditClient = (config: RedditClientConfiguration) => {
         },
     }
 
+    const getSubredditPost = async <TGetPostArgs extends GetPostArgs>(
+      args: TGetPostArgs
+  ): Promise<any> => {
+      const { subreddit, postId, ...restParams } = args
+
+      const response = await api.get<any>(`/r/${subreddit}/comments/${postId}`, {
+          params: { limit, ...restParams },
+      })
+
+      return filterPosts(response.data, postFilters)
+  }
+
     return {
         finalConfig,
         getAccessToken,
         getSubreddit,
         getSubredditIterator,
         getSubredditNames,
+        getSubredditPost,
+        getUserMulti,
         config: conf,
     }
 }
